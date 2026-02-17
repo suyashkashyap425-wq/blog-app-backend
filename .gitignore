@@ -1,0 +1,5 @@
+target/ 
+.idea/ 
+*.log 
+application-dev.properties 
+application-prod.properties 
