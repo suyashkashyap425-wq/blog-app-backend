@@ -33,16 +33,14 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
+
     // ================= LOGIN =================
     @PostMapping("/login")
-    public ResponseEntity<JwtAuthResponse> createToken(
-            @RequestBody JwtAuthRequest request
-    ) {
+    public ResponseEntity<JwtAuthResponse> createToken(@RequestBody JwtAuthRequest request) {
 
         authenticate(request.getUsername(), request.getPassword());
 
-        UserDetails userDetails =
-                userDetailService.loadUserByUsername(request.getUsername());
+        UserDetails userDetails = userDetailService.loadUserByUsername(request.getUsername());
 
         String token = jwtTokenHelper.generateToken(userDetails);
 
@@ -52,16 +50,16 @@ public class AuthController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // ================= REGISTER (NORMAL USER) =================
+
+    // ================= REGISTER =================
     @PostMapping("/register")
-    public ResponseEntity<UserDto> registerUser(
-            @RequestBody UserDto userDto
-    ) {
+    public ResponseEntity<UserDto> registerUser(@RequestBody UserDto userDto) {
+
         UserDto registeredUser = this.userService.registerNewUser(userDto);
         return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
     }
 
-    // ================= AUTH HELPER =================
+
     private void authenticate(String username, String password) {
 
         UsernamePasswordAuthenticationToken authenticationToken =
@@ -69,8 +67,7 @@ public class AuthController {
 
         try {
             authenticationManager.authenticate(authenticationToken);
-        }
-        catch (BadCredentialsException e) {
+        } catch (BadCredentialsException e) {
             throw new ApiException("Invalid username or password !!");
         }
     }

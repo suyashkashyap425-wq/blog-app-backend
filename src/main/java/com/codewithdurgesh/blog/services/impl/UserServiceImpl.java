@@ -36,12 +36,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto registerNewUser(UserDto userDto) {
 
+        // DTO -> ENTITY
         User user = this.modelMapper.map(userDto, User.class);
 
-        user.setPassword(
-                this.passwordEncoder.encode(user.getPassword())
-        );
+        // 🔥 IMPORTANT FIX (always encode from DTO)
+        user.setPassword(this.passwordEncoder.encode(userDto.getPassword()));
 
+        // assign default role
         Role role = this.roleRepo
                 .findById(AppConstants.NORMAL_USER)
                 .orElseThrow(() -> new RuntimeException("Role not found"));
@@ -49,12 +50,17 @@ public class UserServiceImpl implements UserService {
         user.getRoles().add(role);
 
         User savedUser = this.userRepo.save(user);
+
         return this.modelMapper.map(savedUser, UserDto.class);
     }
 
     @Override
     public UserDto createUser(UserDto userDto) {
         User user = this.modelMapper.map(userDto, User.class);
+
+        // also encode here (important for manual creation APIs)
+        user.setPassword(this.passwordEncoder.encode(userDto.getPassword()));
+
         User savedUser = this.userRepo.save(user);
         return this.modelMapper.map(savedUser, UserDto.class);
     }

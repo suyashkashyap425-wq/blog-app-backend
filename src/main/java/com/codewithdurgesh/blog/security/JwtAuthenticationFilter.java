@@ -31,25 +31,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String requestToken = request.getHeader("Authorization");
+        String header = request.getHeader("Authorization");
 
         String username = null;
         String token = null;
 
-        if (requestToken != null && requestToken.startsWith("Bearer ")) {
-            token = requestToken.substring(7);
+        if (header != null && header.startsWith("Bearer ")) {
+
+            token = header.substring(7);
+
             try {
                 username = jwtTokenHelper.getUsernameFromToken(token);
             } catch (Exception e) {
-                System.out.println("JWT error: " + e.getMessage());
+                System.out.println("JWT Invalid: " + e.getMessage());
             }
         }
 
-        if (username != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            UserDetails userDetails =
-                    this.userDetailsService.loadUserByUsername(username);
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
             if (jwtTokenHelper.validateToken(token, userDetails)) {
 
@@ -64,8 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
 

@@ -27,21 +27,16 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public CommentDto createComment(CommentDto commentDto, Integer postId) {
 
-        // 1. get post
         Post post = this.postRepo.findById(postId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Post", "postId", postId));
 
-        // 2. map dto -> entity
-        Comment comment = this.modelMapper.map(commentDto, Comment.class);
-
-        // 3. set post
+        Comment comment = new Comment();
+        comment.setContent(commentDto.getContent());
         comment.setPost(post);
 
-        // 4. save comment
         Comment savedComment = this.commentRepo.save(comment);
 
-        // 5. map entity -> dto
         return this.modelMapper.map(savedComment, CommentDto.class);
     }
 

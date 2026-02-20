@@ -10,10 +10,12 @@ public class Comment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(length = 1000, nullable = false)
     private String content;
 
-    @ManyToOne
-    @JoinColumn(name = "post_id")
+    // Many comments belong to one post
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
     // ================= GETTERS & SETTERS =================
@@ -42,4 +44,3 @@ public class Comment {
         this.post = post;
     }
 }
-

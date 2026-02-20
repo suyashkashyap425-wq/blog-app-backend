@@ -5,12 +5,8 @@ public class CommentDto {
     private Integer id;
     private String content;
 
-    // ===== NoArgsConstructor =====
     public CommentDto() {
-        super();
     }
-
-    // ===== Getters & Setters =====
 
     public Integer getId() {
         return id;

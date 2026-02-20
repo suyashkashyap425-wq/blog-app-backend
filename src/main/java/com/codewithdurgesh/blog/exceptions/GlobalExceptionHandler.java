@@ -18,95 +18,71 @@ import com.codewithdurgesh.blog.payloads.ApiResponse;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ================= RESOURCE NOT FOUND =================
+    // ========= RESOURCE NOT FOUND =========
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse> handleResourceNotFoundException(
-            ResourceNotFoundException ex) {
-
+    public ResponseEntity<ApiResponse> handleResourceNotFound(ResourceNotFoundException ex){
         return new ResponseEntity<>(
                 new ApiResponse(ex.getMessage(), false),
                 HttpStatus.NOT_FOUND
         );
     }
 
-    // ================= VALIDATION ERRORS =================
+    // ========= VALIDATION ERROR =========
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleMethodArgsNotValidException(
-            MethodArgumentNotValidException ex) {
+    public ResponseEntity<Map<String,String>> handleValidation(MethodArgumentNotValidException ex){
 
-        Map<String, String> resp = new HashMap<>();
+        Map<String,String> errors = new HashMap<>();
 
-        ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
-            String message = error.getDefaultMessage();
-            resp.put(fieldName, message);
+        ex.getBindingResult().getAllErrors().forEach(err -> {
+            String field = ((FieldError)err).getField();
+            String msg = err.getDefaultMessage();
+            errors.put(field,msg);
         });
 
-        return new ResponseEntity<>(resp, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(errors,HttpStatus.BAD_REQUEST);
     }
 
-    // ================= BAD CREDENTIALS / API ERROR =================
-    // 🔥 Durgesh-style: success = true
+    // ========= CUSTOM API ERROR =========
     @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ApiResponse> handleApiException(ApiException ex) {
-
+    public ResponseEntity<ApiResponse> handleApiException(ApiException ex){
         return new ResponseEntity<>(
-                new ApiResponse(ex.getMessage(), true), // ✅ CHANGED HERE
+                new ApiResponse(ex.getMessage(), false),
                 HttpStatus.BAD_REQUEST
         );
     }
 
-    // ================= ACCESS DENIED (ROLE ISSUE → 403) =================
+    // ========= ACCESS DENIED =========
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse> handleAccessDeniedException(
-            AccessDeniedException ex) {
-
+    public ResponseEntity<ApiResponse> handleAccessDenied(AccessDeniedException ex){
         return new ResponseEntity<>(
-                new ApiResponse(
-                        "Access Denied: You are not authorized to perform this action",
-                        false
-                ),
+                new ApiResponse("You are not authorized to access this resource", false),
                 HttpStatus.FORBIDDEN
         );
     }
 
-    // ================= MULTIPART ERROR =================
+    // ========= IMAGE UPLOAD ERROR =========
     @ExceptionHandler(MultipartException.class)
-    public ResponseEntity<ApiResponse> handleMultipartException(
-            MultipartException ex) {
-
+    public ResponseEntity<ApiResponse> handleMultipart(MultipartException ex){
         return new ResponseEntity<>(
-                new ApiResponse(
-                        "Please upload image using form-data with key 'image'",
-                        false
-                ),
+                new ApiResponse("Upload image using form-data key = image", false),
                 HttpStatus.BAD_REQUEST
         );
     }
 
-    // ================= UNSUPPORTED MEDIA TYPE =================
+    // ========= MEDIA TYPE =========
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-    public ResponseEntity<ApiResponse> handleMediaTypeNotSupported(
-            HttpMediaTypeNotSupportedException ex) {
-
+    public ResponseEntity<ApiResponse> handleMedia(HttpMediaTypeNotSupportedException ex){
         return new ResponseEntity<>(
-                new ApiResponse(
-                        "Content-Type not supported",
-                        false
-                ),
+                new ApiResponse("Unsupported Content-Type", false),
                 HttpStatus.UNSUPPORTED_MEDIA_TYPE
         );
     }
 
-    // ================= FALLBACK =================
+    // ========= FALLBACK =========
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse> handleGenericException(Exception ex) {
-
+    public ResponseEntity<ApiResponse> handleGeneric(Exception ex){
         return new ResponseEntity<>(
-                new ApiResponse(
-                        "Internal Server Error: " + ex.getMessage(),
-                        false
-                ),
+                new ApiResponse("Internal Server Error", false),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }

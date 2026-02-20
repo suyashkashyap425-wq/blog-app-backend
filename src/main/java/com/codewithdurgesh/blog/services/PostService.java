@@ -13,7 +13,6 @@ public interface PostService {
 
     void deletePost(Integer postId);
 
-    // pagination + sorting
     PostResponse getAllPost(Integer pageNumber, Integer pageSize, String sortBy, String sortDir);
 
     PostDto getPostById(Integer postId);
@@ -22,6 +21,6 @@ public interface PostService {
 
     List<PostDto> getPostsByUser(Integer userId);
 
-    // search
     List<PostDto> searchPosts(String keyword);
 }
+
