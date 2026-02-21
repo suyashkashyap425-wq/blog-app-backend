@@ -1,6 +1,7 @@
 package com.codewithdurgesh.blog.services.impl;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -25,87 +26,89 @@ public class UserServiceImpl implements UserService {
     private UserRepo userRepo;
 
     @Autowired
+    private RoleRepo roleRepo;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private RoleRepo roleRepo;
-
-    // ================= REGISTER =================
-    // 🔥 MOST IMPORTANT METHOD
+    // ================= REGISTER USER (MOST IMPORTANT) =================
     @Override
     @Transactional
     public UserDto registerNewUser(UserDto userDto) {
 
-        // DTO → ENTITY
-        User user = this.modelMapper.map(userDto, User.class);
+        // 🔥 1. CHECK DUPLICATE EMAIL
+        Optional<User> existing = userRepo.findByEmail(userDto.getEmail());
+        if (existing.isPresent()) {
+            throw new RuntimeException("User already exists with this email !!");
+        }
 
-        // encode password
-        user.setPassword(this.passwordEncoder.encode(userDto.getPassword()));
+        // 🔥 2. DTO → ENTITY
+        User user = modelMapper.map(userDto, User.class);
 
-        // STEP 1: save user FIRST (generate ID)
-        User savedUser = this.userRepo.save(user);
+        // 🔥 3. ENCODE PASSWORD
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
 
-        // STEP 2: fetch role
-        Role role = this.roleRepo
-                .findById(AppConstants.NORMAL_USER)
-                .orElseThrow(() -> new RuntimeException("NORMAL_USER role missing in DB"));
+        // 🔥 4. SAVE USER FIRST (generate ID)
+        User savedUser = userRepo.save(user);
 
-        // STEP 3: attach role AFTER ID exists
+        // 🔥 5. ATTACH ROLE AFTER USER ID EXISTS
+        Role role = roleRepo.findById(AppConstants.NORMAL_USER)
+                .orElseThrow(() -> new RuntimeException("ROLE_NORMAL not found in DB"));
+
         savedUser.getRoles().add(role);
 
-        // STEP 4: save again (creates entry in user_roles)
-        User finalUser = this.userRepo.save(savedUser);
+        // 🔥 6. SAVE AGAIN (insert into user_roles table)
+        User finalUser = userRepo.save(savedUser);
 
-        return this.modelMapper.map(finalUser, UserDto.class);
+        // 🔥 7. RETURN DTO
+        return modelMapper.map(finalUser, UserDto.class);
     }
 
     // ================= CREATE USER =================
     @Override
     public UserDto createUser(UserDto userDto) {
 
-        User user = this.modelMapper.map(userDto, User.class);
-        user.setPassword(this.passwordEncoder.encode(userDto.getPassword()));
+        User user = modelMapper.map(userDto, User.class);
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
 
-        User savedUser = this.userRepo.save(user);
-        return this.modelMapper.map(savedUser, UserDto.class);
+        User savedUser = userRepo.save(user);
+        return modelMapper.map(savedUser, UserDto.class);
     }
 
     // ================= UPDATE =================
     @Override
     public UserDto updateUser(UserDto userDto, Integer userId) {
 
-        User user = this.userRepo.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User", "Id", userId));
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "Id", userId));
 
         user.setName(userDto.getName());
         user.setEmail(userDto.getEmail());
         user.setAbout(userDto.getAbout());
 
-        User updated = this.userRepo.save(user);
-        return this.modelMapper.map(updated, UserDto.class);
+        User updatedUser = userRepo.save(user);
+        return modelMapper.map(updatedUser, UserDto.class);
     }
 
     // ================= GET ONE =================
     @Override
     public UserDto getUserById(Integer userId) {
 
-        User user = this.userRepo.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User", "Id", userId));
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "Id", userId));
 
-        return this.modelMapper.map(user, UserDto.class);
+        return modelMapper.map(user, UserDto.class);
     }
 
     // ================= GET ALL =================
     @Override
     public List<UserDto> getAllUsers() {
-        return this.userRepo.findAll()
+        return userRepo.findAll()
                 .stream()
-                .map(user -> this.modelMapper.map(user, UserDto.class))
+                .map(user -> modelMapper.map(user, UserDto.class))
                 .collect(Collectors.toList());
     }
 
@@ -113,10 +116,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deleteUser(Integer userId) {
 
-        User user = this.userRepo.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User", "Id", userId));
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "Id", userId));
 
-        this.userRepo.delete(user);
+        userRepo.delete(user);
     }
 }

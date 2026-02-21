@@ -1,8 +1,7 @@
 package com.codewithdurgesh.blog;
 
-import java.util.List;
-
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,37 +14,36 @@ import com.codewithdurgesh.blog.repositories.RoleRepo;
 @SpringBootApplication
 public class BlogAppApisApplication implements CommandLineRunner {
 
-    private final RoleRepo roleRepo;
+	@Autowired
+	private RoleRepo roleRepo;
 
-    public BlogAppApisApplication(RoleRepo roleRepo) {
-        this.roleRepo = roleRepo;
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(BlogAppApisApplication.class, args);
+	}
 
-    public static void main(String[] args) {
-        SpringApplication.run(BlogAppApisApplication.class, args);
-    }
+	@Bean
+	public ModelMapper modelMapper() {
+		return new ModelMapper();
+	}
 
-    @Bean
-    public ModelMapper modelMapper() {
-        return new ModelMapper();
-    }
+	// 🔥 AUTO CREATE ROLES ON STARTUP
+	@Override
+	public void run(String... args) throws Exception {
 
-    @Override
-    public void run(String... args) {
+		if (roleRepo.count() == 0) {
 
-        if (roleRepo.count() == 0) {
+			Role admin = new Role();
+			admin.setId(AppConstants.ADMIN_USER);
+			admin.setName("ROLE_ADMIN");
 
-            Role admin = new Role();
-            admin.setId(AppConstants.ADMIN_USER);
-            admin.setName("ROLE_ADMIN");
+			Role normal = new Role();
+			normal.setId(AppConstants.NORMAL_USER);
+			normal.setName("ROLE_NORMAL");
 
-            Role normal = new Role();
-            normal.setId(AppConstants.NORMAL_USER);
-            normal.setName("ROLE_NORMAL");
+			roleRepo.save(admin);
+			roleRepo.save(normal);
 
-            roleRepo.saveAll(List.of(admin, normal));
-
-            System.out.println("Default roles inserted successfully.");
-        }
-    }
+			System.out.println("DEFAULT ROLES INSERTED !");
+		}
+	}
 }
