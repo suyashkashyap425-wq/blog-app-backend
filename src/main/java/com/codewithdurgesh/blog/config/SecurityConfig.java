@@ -42,28 +42,28 @@ public class SecurityConfig {
         this.accessDeniedHandler = accessDeniedHandler;
     }
 
-    // PASSWORD ENCODER
+    // ================= PASSWORD =================
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // AUTH PROVIDER
+    // ================= AUTH PROVIDER =================
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailService);
+        provider.setUserDetailsService(userDetailService); // ⭐ IMPORTANT
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
 
-    // AUTH MANAGER
+    // ================= AUTH MANAGER =================
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    // MAIN SECURITY
+    // ================= MAIN SECURITY =================
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
@@ -81,26 +81,28 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth -> auth
 
-                    // 🔓 AUTH
+                    // AUTH APIs
                     .requestMatchers("/api/v1/auth/**").permitAll()
 
-                    // 🔓 SWAGGER
+                    // SWAGGER
                     .requestMatchers(
                             "/v3/api-docs/**",
                             "/swagger-ui/**",
                             "/swagger-ui.html"
                     ).permitAll()
 
-                    // 🔓 PUBLIC READ APIs
+                    // PUBLIC GET APIs
                     .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/post/image/**").permitAll()
 
-                    // 🔐 EVERYTHING ELSE PROTECTED
+                    // EVERYTHING ELSE PROTECTED
                     .anyRequest().authenticated()
             )
 
-            .authenticationProvider(authenticationProvider());
+            // ⭐⭐ THIS LINE FIXES LOGIN 500
+            .authenticationProvider(authenticationProvider())
+            .userDetailsService(userDetailService);
 
         // JWT FILTER
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
