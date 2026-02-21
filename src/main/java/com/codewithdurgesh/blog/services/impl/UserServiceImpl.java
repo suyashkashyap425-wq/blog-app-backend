@@ -32,33 +32,35 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private RoleRepo roleRepo;
 
-    // ⭐ REGISTER NEW USER (NORMAL ROLE)
+    // ⭐ REGISTER NEW USER (FINAL FIXED)
     @Override
     public UserDto registerNewUser(UserDto userDto) {
 
-        // DTO -> ENTITY
         User user = this.modelMapper.map(userDto, User.class);
 
-        // 🔥 IMPORTANT FIX (always encode from DTO)
+        // encode password
         user.setPassword(this.passwordEncoder.encode(userDto.getPassword()));
 
-        // assign default role
+        // get normal role
         Role role = this.roleRepo
                 .findById(AppConstants.NORMAL_USER)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new RuntimeException("Role not found in DB"));
 
         user.getRoles().add(role);
 
+        // save
         User savedUser = this.userRepo.save(user);
+
+        // 🔥 reload entity (fix Hibernate proxy crash)
+        savedUser = this.userRepo.findById(savedUser.getId()).get();
 
         return this.modelMapper.map(savedUser, UserDto.class);
     }
 
     @Override
     public UserDto createUser(UserDto userDto) {
-        User user = this.modelMapper.map(userDto, User.class);
 
-        // also encode here (important for manual creation APIs)
+        User user = this.modelMapper.map(userDto, User.class);
         user.setPassword(this.passwordEncoder.encode(userDto.getPassword()));
 
         User savedUser = this.userRepo.save(user);
@@ -76,10 +78,7 @@ public class UserServiceImpl implements UserService {
         user.setEmail(userDto.getEmail());
         user.setAbout(userDto.getAbout());
 
-        return this.modelMapper.map(
-                this.userRepo.save(user),
-                UserDto.class
-        );
+        return this.modelMapper.map(this.userRepo.save(user), UserDto.class);
     }
 
     @Override

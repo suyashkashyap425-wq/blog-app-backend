@@ -1,12 +1,11 @@
 package com.codewithdurgesh.blog.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import java.io.Serializable;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "roles")
-public class Role {
+public class Role implements Serializable {
 
     @Id
     private Integer id;
@@ -14,6 +13,11 @@ public class Role {
     private String name;
 
     public Role() {}
+
+    public Role(Integer id, String name) {
+        this.id = id;
+        this.name = name;
+    }
 
     public Integer getId() {
         return id;
