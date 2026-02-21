@@ -7,6 +7,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.codewithdurgesh.blog.config.AppConstants;
 import com.codewithdurgesh.blog.entities.Role;
@@ -32,31 +33,36 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private RoleRepo roleRepo;
 
-    // ⭐ REGISTER NEW USER (FINAL FIXED)
+    // ================= REGISTER =================
+    // 🔥 MOST IMPORTANT METHOD
     @Override
+    @Transactional
     public UserDto registerNewUser(UserDto userDto) {
 
+        // DTO → ENTITY
         User user = this.modelMapper.map(userDto, User.class);
 
         // encode password
         user.setPassword(this.passwordEncoder.encode(userDto.getPassword()));
 
-        // get normal role
-        Role role = this.roleRepo
-                .findById(AppConstants.NORMAL_USER)
-                .orElseThrow(() -> new RuntimeException("Role not found in DB"));
-
-        user.getRoles().add(role);
-
-        // save
+        // STEP 1: save user FIRST (generate ID)
         User savedUser = this.userRepo.save(user);
 
-        // 🔥 reload entity (fix Hibernate proxy crash)
-        savedUser = this.userRepo.findById(savedUser.getId()).get();
+        // STEP 2: fetch role
+        Role role = this.roleRepo
+                .findById(AppConstants.NORMAL_USER)
+                .orElseThrow(() -> new RuntimeException("NORMAL_USER role missing in DB"));
 
-        return this.modelMapper.map(savedUser, UserDto.class);
+        // STEP 3: attach role AFTER ID exists
+        savedUser.getRoles().add(role);
+
+        // STEP 4: save again (creates entry in user_roles)
+        User finalUser = this.userRepo.save(savedUser);
+
+        return this.modelMapper.map(finalUser, UserDto.class);
     }
 
+    // ================= CREATE USER =================
     @Override
     public UserDto createUser(UserDto userDto) {
 
@@ -67,6 +73,7 @@ public class UserServiceImpl implements UserService {
         return this.modelMapper.map(savedUser, UserDto.class);
     }
 
+    // ================= UPDATE =================
     @Override
     public UserDto updateUser(UserDto userDto, Integer userId) {
 
@@ -78,9 +85,11 @@ public class UserServiceImpl implements UserService {
         user.setEmail(userDto.getEmail());
         user.setAbout(userDto.getAbout());
 
-        return this.modelMapper.map(this.userRepo.save(user), UserDto.class);
+        User updated = this.userRepo.save(user);
+        return this.modelMapper.map(updated, UserDto.class);
     }
 
+    // ================= GET ONE =================
     @Override
     public UserDto getUserById(Integer userId) {
 
@@ -91,6 +100,7 @@ public class UserServiceImpl implements UserService {
         return this.modelMapper.map(user, UserDto.class);
     }
 
+    // ================= GET ALL =================
     @Override
     public List<UserDto> getAllUsers() {
         return this.userRepo.findAll()
@@ -99,6 +109,7 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    // ================= DELETE =================
     @Override
     public void deleteUser(Integer userId) {
 
