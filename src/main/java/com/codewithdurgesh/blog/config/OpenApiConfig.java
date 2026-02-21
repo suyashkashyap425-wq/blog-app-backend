@@ -4,6 +4,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.Components;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,12 +20,15 @@ public class OpenApiConfig {
 
         return new OpenAPI()
 
+                // 🌍 IMPORTANT → Railway HTTPS server (CORS fix)
+                .addServersItem(new Server().url("https://blog-app-backend-production-f8e2.up.railway.app"))
+
                 // 🔐 Security requirement
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
 
-                // 🔐 Define security scheme (JWT)
+                // 🔐 JWT Security Scheme
                 .components(
-                        new io.swagger.v3.oas.models.Components()
+                        new Components()
                                 .addSecuritySchemes(
                                         securitySchemeName,
                                         new SecurityScheme()
