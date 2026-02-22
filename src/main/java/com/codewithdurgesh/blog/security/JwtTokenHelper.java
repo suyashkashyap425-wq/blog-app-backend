@@ -1,5 +1,6 @@
 package com.codewithdurgesh.blog.security;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
@@ -12,16 +13,16 @@ import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtTokenHelper {
 
-    @Value("${jwt.secret}")
+    // If Railway variable missing, default value use karega (NO CRASH)
+    @Value("${jwt.secret:ThisIsDefaultJwtSecretKeyForFallbackIfMissing123456789}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration}")
+    @Value("${jwt.expiration:604800000}")
     private long jwtExpiration;
 
     // ================= GET USERNAME =================
@@ -76,7 +77,6 @@ public class JwtTokenHelper {
 
     // ================= SECRET KEY =================
     private Key getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 }
