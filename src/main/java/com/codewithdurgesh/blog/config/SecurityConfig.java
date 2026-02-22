@@ -1,5 +1,8 @@
 package com.codewithdurgesh.blog.config;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,6 +17,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.codewithdurgesh.blog.security.CustomUserDetailService;
 import com.codewithdurgesh.blog.security.JwtAccessDeniedHandler;
@@ -42,43 +48,64 @@ public class SecurityConfig {
         this.accessDeniedHandler = accessDeniedHandler;
     }
 
-    // ================= PASSWORD =================
+    // PASSWORD
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // ================= AUTH PROVIDER =================
+    // AUTH PROVIDER
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailService); // ⭐ IMPORTANT
+        provider.setUserDetailsService(userDetailService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
 
-    // ================= AUTH MANAGER =================
+    // AUTH MANAGER
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    // ================= MAIN SECURITY =================
+    // ⭐⭐⭐ FINAL CORS FIX
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:8081",
+                "http://localhost:3000",
+                "http://localhost:4200",
+                "https://blog-app-backend-production-f8e2.up.railway.app"
+        ));
+
+        configuration.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
+    }
+
+    // MAIN SECURITY
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-
             .sessionManagement(session ->
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-
             .exceptionHandling(ex -> ex
                     .authenticationEntryPoint(authenticationEntryPoint)
                     .accessDeniedHandler(accessDeniedHandler)
             )
-
             .authorizeHttpRequests(auth -> auth
 
                     // AUTH APIs
@@ -96,15 +123,10 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/post/image/**").permitAll()
 
-                    // EVERYTHING ELSE PROTECTED
                     .anyRequest().authenticated()
             )
+            .authenticationProvider(authenticationProvider());
 
-            // ⭐⭐ THIS LINE FIXES LOGIN 500
-            .authenticationProvider(authenticationProvider())
-            .userDetailsService(userDetailService);
-
-        // JWT FILTER
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

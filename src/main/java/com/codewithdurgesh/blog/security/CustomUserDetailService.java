@@ -1,5 +1,7 @@
 package com.codewithdurgesh.blog.security;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.codewithdurgesh.blog.entities.User;
 import com.codewithdurgesh.blog.repositories.UserRepo;
+import com.codewithdurgesh.blog.security.UserDetailsImpl;
 
 @Service
 public class CustomUserDetailService implements UserDetailsService {
@@ -18,11 +21,13 @@ public class CustomUserDetailService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        User user = this.userRepo.findByEmail(username)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found with email: " + username));
+        Optional<User> optionalUser = this.userRepo.findByEmail(username);
 
-        // 🔥 RETURN UserDetailsImpl NOT ENTITY
-        return new UserDetailsImpl(user);
+        if(optionalUser.isEmpty()){
+            throw new UsernameNotFoundException("User not found with email: " + username);
+        }
+
+        // 🔥🔥🔥 MAIN FIX
+        return new UserDetailsImpl(optionalUser.get());
     }
 }

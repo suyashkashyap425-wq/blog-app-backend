@@ -34,44 +34,47 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // ================= REGISTER USER (MOST IMPORTANT) =================
+    // ================= REGISTER USER =================
     @Override
     @Transactional
     public UserDto registerNewUser(UserDto userDto) {
 
-        // 🔥 1. CHECK DUPLICATE EMAIL
+        // check duplicate
         Optional<User> existing = userRepo.findByEmail(userDto.getEmail());
         if (existing.isPresent()) {
             throw new RuntimeException("User already exists with this email !!");
         }
 
-        // 🔥 2. DTO → ENTITY
-        User user = modelMapper.map(userDto, User.class);
+        // manual mapping (NO MODEL MAPPER HERE)
+        User user = new User();
+        user.setName(userDto.getName());
+        user.setEmail(userDto.getEmail());
+        user.setAbout(userDto.getAbout());
 
-        // 🔥 3. ENCODE PASSWORD
+        // encode password
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
 
-        // 🔥 4. SAVE USER FIRST (generate ID)
+        // save user
         User savedUser = userRepo.save(user);
 
-        // 🔥 5. ATTACH ROLE AFTER USER ID EXISTS
+        // add role
         Role role = roleRepo.findById(AppConstants.NORMAL_USER)
-                .orElseThrow(() -> new RuntimeException("ROLE_NORMAL not found in DB"));
+                .orElseThrow(() -> new RuntimeException("ROLE_NORMAL not found"));
 
         savedUser.getRoles().add(role);
+        userRepo.save(savedUser);
 
-        // 🔥 6. SAVE AGAIN (insert into user_roles table)
-        User finalUser = userRepo.save(savedUser);
-
-        // 🔥 7. RETURN DTO
-        return modelMapper.map(finalUser, UserDto.class);
+        return modelMapper.map(savedUser, UserDto.class);
     }
 
     // ================= CREATE USER =================
     @Override
     public UserDto createUser(UserDto userDto) {
 
-        User user = modelMapper.map(userDto, User.class);
+        User user = new User();
+        user.setName(userDto.getName());
+        user.setEmail(userDto.getEmail());
+        user.setAbout(userDto.getAbout());
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
 
         User savedUser = userRepo.save(user);
