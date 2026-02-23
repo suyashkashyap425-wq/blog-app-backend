@@ -32,23 +32,24 @@ public class PostController {
     @Autowired
     private FileService fileService;
 
-    @Value("${project.image}")
+    // 🔥 SAFE DEFAULT VALUE ADDED
+    @Value("${project.image:/tmp/blog-images/}")
     private String path;
 
 
-    // ================= CREATE POST =================
     @PostMapping("/user/{userId}/category/{categoryId}/posts")
     public ResponseEntity<PostDto> createPost(
             @RequestBody PostDto postDto,
             @PathVariable Integer userId,
             @PathVariable Integer categoryId) {
 
-        PostDto createdPost = postService.createPost(postDto, userId, categoryId);
-        return new ResponseEntity<>(createdPost, HttpStatus.CREATED);
+        return new ResponseEntity<>(
+                postService.createPost(postDto, userId, categoryId),
+                HttpStatus.CREATED
+        );
     }
 
 
-    // ================= GET ALL POSTS =================
     @GetMapping("/posts")
     public ResponseEntity<PostResponse> getAllPost(
             @RequestParam(value="pageNumber",defaultValue=AppConstants.PAGE_NUMBER) Integer pageNumber,
@@ -56,54 +57,56 @@ public class PostController {
             @RequestParam(value="sortBy",defaultValue=AppConstants.SORT_BY) String sortBy,
             @RequestParam(value="sortDir",defaultValue=AppConstants.SORT_DIR) String sortDir) {
 
-        return ResponseEntity.ok(postService.getAllPost(pageNumber,pageSize,sortBy,sortDir));
+        return ResponseEntity.ok(
+                postService.getAllPost(pageNumber,pageSize,sortBy,sortDir)
+        );
     }
 
 
-    // ================= GET SINGLE POST =================
     @GetMapping("/posts/{postId}")
     public ResponseEntity<PostDto> getPostById(@PathVariable Integer postId) {
         return ResponseEntity.ok(postService.getPostById(postId));
     }
 
 
-    // ================= GET POSTS BY USER =================
     @GetMapping("/user/{userId}/posts")
     public ResponseEntity<List<PostDto>> getPostsByUser(@PathVariable Integer userId){
         return ResponseEntity.ok(postService.getPostsByUser(userId));
     }
 
 
-    // ================= GET POSTS BY CATEGORY =================
     @GetMapping("/category/{categoryId}/posts")
     public ResponseEntity<List<PostDto>> getPostsByCategory(@PathVariable Integer categoryId){
         return ResponseEntity.ok(postService.getPostsByCategory(categoryId));
     }
 
 
-    // ================= UPDATE POST =================
     @PutMapping("/posts/{postId}")
-    public ResponseEntity<PostDto> updatePost(@RequestBody PostDto postDto,@PathVariable Integer postId){
-        return ResponseEntity.ok(postService.updatePost(postDto,postId));
+    public ResponseEntity<PostDto> updatePost(
+            @RequestBody PostDto postDto,
+            @PathVariable Integer postId){
+
+        return ResponseEntity.ok(
+                postService.updatePost(postDto,postId)
+        );
     }
 
 
-    // ================= DELETE POST =================
     @DeleteMapping("/posts/{postId}")
     public ResponseEntity<ApiResponse> deletePost(@PathVariable Integer postId){
         postService.deletePost(postId);
-        return ResponseEntity.ok(new ApiResponse("Post deleted successfully",true));
+        return ResponseEntity.ok(
+                new ApiResponse("Post deleted successfully",true)
+        );
     }
 
 
-    // ================= SEARCH POSTS =================
     @GetMapping("/posts/search/{keywords}")
     public ResponseEntity<List<PostDto>> searchPosts(@PathVariable String keywords){
         return ResponseEntity.ok(postService.searchPosts(keywords));
     }
 
 
-    // ================= UPLOAD IMAGE =================
     @PostMapping(value="/post/image/upload/{postId}",consumes="multipart/form-data")
     public ResponseEntity<PostDto> uploadPostImage(
             @RequestParam("image") MultipartFile image,
@@ -113,13 +116,16 @@ public class PostController {
         String fileName = fileService.uploadImage(path,image);
         postDto.setImageName(fileName);
 
-        return ResponseEntity.ok(postService.updatePost(postDto,postId));
+        return ResponseEntity.ok(
+                postService.updatePost(postDto,postId)
+        );
     }
 
 
-    // ================= SERVE IMAGE =================
     @GetMapping(value="/post/image/{imageName}",produces=MediaType.IMAGE_JPEG_VALUE)
-    public void downloadImage(@PathVariable String imageName,HttpServletResponse response) throws IOException {
+    public void downloadImage(
+            @PathVariable String imageName,
+            HttpServletResponse response) throws IOException {
 
         InputStream resource = fileService.getResource(path,imageName);
         response.setContentType(MediaType.IMAGE_JPEG_VALUE);
